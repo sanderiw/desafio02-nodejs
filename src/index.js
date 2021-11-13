@@ -31,7 +31,17 @@ function checksCreateTodosUserAvailability(request, response, next) {
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { user } = request;
+  const { id } = request.params;
+  const isValid = validate(id);
+  const todo = user.todos.find((todo) => todo.id === id);
+  if (!isValid && !todo) {
+    return response
+      .status(404)
+      .json({ error: "Id não é válido ou não encontrado" });
+  }
+  request.todo = todo;
+  next();
 }
 
 function findUserById(request, response, next) {
