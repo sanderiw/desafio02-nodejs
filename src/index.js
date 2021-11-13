@@ -21,8 +21,8 @@ function checksExistsUserAccount(request, response, next) {
 
 function checksCreateTodosUserAvailability(request, response, next) {
   const { user } = request;
-  const isFreeUserValid = user.pro === false && user.todos.length < 10;
-  if (!isFreeUserValid) {
+  const isNotFreeUserValid = user.pro === false && user.todos.length >= 10;
+  if (isNotFreeUserValid) {
     return response
       .status(403)
       .json({ error: "Usuário atingiu o limite do plano gratuito" });
@@ -31,16 +31,25 @@ function checksCreateTodosUserAvailability(request, response, next) {
 }
 
 function checksTodoExists(request, response, next) {
-  const { user } = request;
+  const { username } = request.headers;
   const { id } = request.params;
   const isValid = validate(id);
-  const todo = user.todos.find((todo) => todo.id === id);
-  if (!isValid && !todo) {
+  const user = users.find((user) => user.username === username);
+  if (!user) {
     return response
       .status(404)
-      .json({ error: "Id não é válido ou não encontrado" });
+      .json({ error: "Nome de usuário não encontrado" });
   }
+  const todo = user.todos.find((todo) => todo.id === id);
+  if (!isValid) {
+    return response.status(400).json({ error: "Id não é válido" });
+  }
+  if (!todo) {
+    return response.status(404).json({ error: "Todo não encontrado" });
+  }
+
   request.todo = todo;
+  request.user = user;
   next();
 }
 
@@ -49,7 +58,7 @@ function findUserById(request, response, next) {
   const user = users.find((user) => user.id === id);
   if (!user) {
     return response
-      .status(400)
+      .status(404)
       .json({ error: "Usuário não encontrado pelo id" });
   }
   request.user = user;
